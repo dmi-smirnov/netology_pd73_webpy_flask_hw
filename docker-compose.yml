@@ -1,0 +1,41 @@
+volumes:
+  pgdata:
+
+networks:
+  net:
+
+services:
+  dbms:
+    image: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data:rw
+    networks:
+      - net
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PWD}
+      - POSTGRES_DB=${DB_NAME}
+
+  gunicorn_flask:
+    image: netology_pd73_webpy_flask_hw
+    networks:
+      - net
+    environment:
+      - POSTGRESQL_HOST_ADDR=dbms
+      - POSTGRESQL_HOST_PORT=${DB_PORT}
+      - POSTGRESQL_USER=${DB_USER}
+      - POSTGRESQL_PWD=${DB_PWD}
+      - POSTGRESQL_DB=${DB_NAME}
+    depends_on:
+      - dbms
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx_templates:/etc/nginx/templates:ro
+    networks:
+      - net
+    ports:
+      - ${HTTP_SRV_ADDR_PORT}:80
+    depends_on:
+      - gunicorn_flask
